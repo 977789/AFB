@@ -532,10 +532,36 @@ async def forward_messages(client, message):
                 log.error(f"Error forwarding: {e}")
                 break
 
+# --- Health Check (Koyeb) ---
+
+async def handle_health_check(reader, writer):
+    try:
+        await reader.read(1024)
+        body = b"OK"
+        response = (
+            b"HTTP/1.1 200 OK\r\n"
+            b"Content-Type: text/plain\r\n"
+            b"Content-Length: " + str(len(body)).encode() + b"\r\n"
+            b"Connection: close\r\n"
+            b"\r\n" + body
+        )
+        writer.write(response)
+        await writer.drain()
+    except Exception:
+        pass
+    finally:
+        writer.close()
+
+async def start_health_server():
+    server = await asyncio.start_server(handle_health_check, "0.0.0.0", 8080)
+    log.info("Health check server listening on port 8080")
+    return server
+
 # --- Start ---
 
 async def main():
     await asyncio.to_thread(load_all_settings)
+    await start_health_server()
     await app.start()
     await bot.start()
     me = await bot.get_me()
