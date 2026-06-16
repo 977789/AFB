@@ -1,0 +1,18 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - mongo
+    volumes:
+      - ./bot.txt:/app/bot.txt
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
